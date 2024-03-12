@@ -1,0 +1,154 @@
+--CITIZEN  CARD dan veri silindiğinde persondaki foreign keye yansıması
+/*
+DELETE 
+FROM CITIZEN_CARD
+WHERE Card_ID = 6;
+
+SELECT * 
+FROM PERSON 
+*/
+
+--Company Name izban olan yolculukların şriket ismi silindi, default değer NO Name atandı.
+/*
+DELETE
+FROM COMPANY
+WHERE Company_Name = 'İzban'
+
+SELECT *
+FROM JOURNEY
+*/
+
+--Company den Location_Id = 10 değerini sildik.
+/*
+DELETE 
+FROM LOCATIONS
+WHERE Company_Name = 'Garenta Araç Kiralama' And Address = 'Beşiktaş Mah., İstanbul'
+
+SELECT * 
+FROM LOCATIONS
+*/
+
+
+-- CITIZEN  CARD dan veri güncellendiğinde persondaki foreign keye yansıması
+/*
+UPDATE CITIZEN_CARD
+SET Card_ID = 30
+WHERE Card_ID = 3;
+
+SELECT * 
+FROM PERSON
+*/
+
+-- Plane_Journey uçak veri tipi update örneği
+/*
+UPDATE PLANE_JOURNEY
+SET Aircraft_Type = 'Boeing 737'
+WHERE Journey_Id = 1002;
+
+SELECT * 
+FROM PLANE_JOURNEY
+*/
+
+-- Update Örneği. Aktarmalı uçuşların ini sürelerini günceller.
+-- Direkt Where IS NOT NULL ile de yapılabilirdi, çeşitlilik olsun diye detaylandırıldı.
+/*
+UPDATE PLANE_JOURNEY
+SET Arrival_Date = '2013-11-01'
+WHERE Next_Journey_ID in (
+			Select Next_Journey_ID
+			From	PLANE_JOURNEY
+			Where	Next_Journey_ID IS NOT NULL
+)
+
+SELECT *
+FROM PLANE_JOURNEY
+*/
+
+-- 2 Tablolu SELECT örneği
+/*
+SELECT *
+FROM PERSON AS P, TRANSACTIONS AS T
+WHERE P.TC = T.TC AND  P.Name = 'Elif'
+*/
+
+-- 2li Sorgu Örneği
+-- Kadın kullanıcıların Arama geçmişi
+/*
+SELECT DISTINCT P.Name, P.Surname, S.*
+FROM PERSON AS P, SEARCH_HISTORY AS S
+WHERE P.TC = S.TC AND P.Gender = 'Kadın'
+*/
+
+-- 3 Tablolu Örnek
+-- Ferry Journey yapan kişileri döndürür.
+/*
+SELECT 
+    P.Name, P.Surname , P.TC
+FROM 
+    PERSON AS P
+WHERE 
+    EXISTS (
+        SELECT 
+            1 
+        FROM 
+            TRANSACTIONS AS T, FERRY_JOURNEY AS FJ 
+      
+        WHERE 
+            T.TC = P.TC and T.Journey_Id = FJ.Journey_Id
+    );
+*/
+-- 3 Tablolu Örnek
+-- Antalya Havalimanında 2023-07-11 tarihinde 100 lira üstündeki işlemin bilgileri.
+/*
+SELECT 
+    T.Transaction_Id, 
+    T.Total_Price, 
+    T.Purchase_Date,
+    J.Journey_Id,
+    J.Company_Name,
+	P.Name,
+	P.Surname,
+	P.TC
+FROM 
+	PERSON AS P,
+    TRANSACTIONS AS T
+INNER JOIN 
+    JOURNEY AS J ON T.Journey_Id = J.Journey_Id 
+WHERE 
+    T.Purchase_Date = '2023-07-11' AND 
+    T.Total_Price > 100.00 AND 
+    J.Journey_Id IN (
+        SELECT 
+            Journey_Id 
+        FROM 
+            PLANE_JOURNEY
+        WHERE 
+            Departure_Airport_Name = 'Antalya Havalimanı' And P.TC = T.TC
+    );*/
+
+-- 3 Tablolu Örnek
+--Türk Havayollarınının 7000 altında max renge sahip uçaklarının bilgileri
+/*
+SELECT A.*
+FROM JOURNEY AS J, AIRPLANE AS A
+WHERE J.Company_Name = 'Türk Hava Yolları'   AND J.Journey_Id IN (
+	SELECT P.Journey_Id
+	FROM  PLANE_JOURNEY AS P
+	WHERE P.Aircraft_Type = A.Aircraft_Type AND A.Max_Range < 7000
+)
+*/
+
+
+-- özel select sorgusu
+ SELECT  PERSON.Name ,PERSON.Surname ,SH.*
+FROM PERSON, TRANSACTIONS  AS T
+JOIN SEARCH_HISTORY AS SH
+ON T.TC = SH.TC
+WHERE PERSON.TC = T.TC 
+AND T.Journey_Id 
+IN 
+(SELECT T.Journey_Id
+FROM HIGH_SPEED_TRAIN_STOPS as HS
+JOIN TRANSACTIONS  AS T
+ON HS.HIGH_SPEED_TRAIN_JOURNEY_ID =T.Journey_Id
+WHERE HS.Station_Name = 'Polatlı Gar')
